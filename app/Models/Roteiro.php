@@ -76,7 +76,7 @@ class Roteiro extends Model
     /**
      * Calcular o saldo disponível.
      */
-    public function getSaldoDisponiveAttribute(): float
+    public function getSaldoDisponivelAttribute(): float
     {
         return $this->orcamento_total - $this->total_gasto;
     }
