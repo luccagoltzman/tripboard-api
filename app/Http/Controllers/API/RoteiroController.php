@@ -7,6 +7,7 @@ use App\Models\Roteiro;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -31,7 +32,59 @@ class RoteiroController extends Controller
     public function store(Request $request)
     {
         try {
-            $validated = Validator::make($request->all(), [
+            // Mapear campos do formato camelCase para snake_case
+            $data = $request->all();
+            
+            // Log para debug
+            Log::info('Dados recebidos (roteiro):', $data);
+            
+            // Nome
+            if (isset($data['name']) && !isset($data['nome'])) {
+                $data['nome'] = $data['name'];
+            }
+            
+            // Descrição - corrigido para evitar auto-verificação
+            if (isset($data['description']) && !isset($data['descricao'])) {
+                $data['descricao'] = $data['description'];
+            }
+            
+            // Data Início - corrigido para evitar auto-verificação
+            if (isset($data['dataInicio']) && !isset($data['data_inicio'])) {
+                $data['data_inicio'] = $data['dataInicio'];
+            } elseif (isset($data['startDate']) && !isset($data['data_inicio'])) {
+                $data['data_inicio'] = $data['startDate'];
+            }
+            
+            // Data Fim - corrigido para evitar auto-verificação
+            if (isset($data['dataFim']) && !isset($data['data_fim'])) {
+                $data['data_fim'] = $data['dataFim'];
+            } elseif (isset($data['endDate']) && !isset($data['data_fim'])) {
+                $data['data_fim'] = $data['endDate'];
+            }
+            
+            // Destino
+            if (isset($data['destination']) && !isset($data['destino'])) {
+                $data['destino'] = $data['destination'];
+            }
+            
+            // Status
+            if (isset($data['state']) && !isset($data['status'])) {
+                $data['status'] = $data['state'];
+            }
+            
+            // Orçamento Total
+            if (isset($data['orcamentoTotal']) && !isset($data['orcamento_total'])) {
+                $data['orcamento_total'] = $data['orcamentoTotal'];
+            } elseif (isset($data['totalBudget']) && !isset($data['orcamento_total'])) {
+                $data['orcamento_total'] = $data['totalBudget'];
+            } elseif (isset($data['budget']) && !isset($data['orcamento_total'])) {
+                $data['orcamento_total'] = $data['budget'];
+            }
+            
+            // Log para debug
+            Log::info('Dados processados (roteiro):', $data);
+
+            $validated = Validator::make($data, [
                 'nome' => 'required|string|max:255',
                 'descricao' => 'nullable|string',
                 'data_inicio' => 'required|date',
@@ -49,12 +102,14 @@ class RoteiroController extends Controller
                 'data' => $roteiro
             ], Response::HTTP_CREATED);
         } catch (ValidationException $e) {
+            Log::error('Erro de validação (roteiro):', $e->errors());
             return response()->json([
                 'success' => false,
                 'message' => 'Erro de validação',
                 'errors' => $e->errors()
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (\Exception $e) {
+            Log::error('Erro ao criar roteiro:', $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao criar roteiro',
@@ -91,7 +146,53 @@ class RoteiroController extends Controller
         try {
             $roteiro = Auth::user()->roteiros()->findOrFail($id);
 
-            $validated = Validator::make($request->all(), [
+            // Mapear campos do formato camelCase para snake_case
+            $data = $request->all();
+            
+            // Nome
+            if (isset($data['name']) && !isset($data['nome'])) {
+                $data['nome'] = $data['name'];
+            }
+            
+            // Descrição - corrigido para evitar auto-verificação
+            if (isset($data['description']) && !isset($data['descricao'])) {
+                $data['descricao'] = $data['description'];
+            }
+            
+            // Data Início - corrigido para evitar auto-verificação
+            if (isset($data['dataInicio']) && !isset($data['data_inicio'])) {
+                $data['data_inicio'] = $data['dataInicio'];
+            } elseif (isset($data['startDate']) && !isset($data['data_inicio'])) {
+                $data['data_inicio'] = $data['startDate'];
+            }
+            
+            // Data Fim - corrigido para evitar auto-verificação
+            if (isset($data['dataFim']) && !isset($data['data_fim'])) {
+                $data['data_fim'] = $data['dataFim'];
+            } elseif (isset($data['endDate']) && !isset($data['data_fim'])) {
+                $data['data_fim'] = $data['endDate'];
+            }
+            
+            // Destino
+            if (isset($data['destination']) && !isset($data['destino'])) {
+                $data['destino'] = $data['destination'];
+            }
+            
+            // Status
+            if (isset($data['state']) && !isset($data['status'])) {
+                $data['status'] = $data['state'];
+            }
+            
+            // Orçamento Total
+            if (isset($data['orcamentoTotal']) && !isset($data['orcamento_total'])) {
+                $data['orcamento_total'] = $data['orcamentoTotal'];
+            } elseif (isset($data['totalBudget']) && !isset($data['orcamento_total'])) {
+                $data['orcamento_total'] = $data['totalBudget'];
+            } elseif (isset($data['budget']) && !isset($data['orcamento_total'])) {
+                $data['orcamento_total'] = $data['budget'];
+            }
+
+            $validated = Validator::make($data, [
                 'nome' => 'sometimes|string|max:255',
                 'descricao' => 'nullable|string',
                 'data_inicio' => 'sometimes|date',

@@ -66,6 +66,14 @@ class Roteiro extends Model
     }
 
     /**
+     * Obter as atividades associadas ao roteiro.
+     */
+    public function atividades(): HasMany
+    {
+        return $this->hasMany(Atividade::class);
+    }
+
+    /**
      * Calcular o total gasto até o momento.
      */
     public function getTotalGastoAttribute(): float

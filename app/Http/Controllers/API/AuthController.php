@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -19,7 +20,52 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         try {
-            $validated = Validator::make($request->all(), [
+            // Mapear campos em português para inglês
+            $data = $request->all();
+            
+            // Depurar os dados recebidos
+            Log::info('Dados recebidos:', $data);
+            
+            // Verificar campos alternativos e mapear para nomes esperados
+            if (isset($data['nome']) && !isset($data['name'])) {
+                $data['name'] = $data['nome'];
+            }
+            
+            if (isset($data['senha']) && !isset($data['password'])) {
+                $data['password'] = $data['senha'];
+            }
+            
+            // Verificar todos os possíveis nomes para confirmação de senha
+            $confirmationFields = [
+                'confirmar_senha',
+                'confirmacao_senha',
+                'senha_confirmacao',
+                'senha_confirmar',
+                'confirmacao',
+                'confirmar',
+                'senha_confirmada',
+                'password_confirm',
+                'confirm_password',
+                'passwordConfirmation',
+                'passwordConfirm',
+                'senha_confirmation'
+            ];
+            
+            foreach ($confirmationFields as $field) {
+                if (isset($data[$field]) && !isset($data['password_confirmation'])) {
+                    $data['password_confirmation'] = $data[$field];
+                    break;
+                }
+            }
+            
+            // Se nenhum campo de confirmação for encontrado, usar o próprio password
+            if (!isset($data['password_confirmation']) && isset($data['password'])) {
+                $data['password_confirmation'] = $data['password'];
+            }
+            
+            Log::info('Dados processados:', $data);
+
+            $validated = Validator::make($data, [
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:8|confirmed',
@@ -43,12 +89,14 @@ class AuthController extends Controller
                 ],
             ], Response::HTTP_CREATED);
         } catch (ValidationException $e) {
+            Log::error('Erro de validação:', $e->errors());
             return response()->json([
                 'success' => false,
                 'message' => 'Erro de validação',
                 'errors' => $e->errors(),
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (\Exception $e) {
+            Log::error('Erro ao registrar:', $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao registrar usuário',
@@ -63,12 +111,20 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         try {
-            $validated = Validator::make($request->all(), [
+            // Mapear campos em português para inglês
+            $data = $request->all();
+            
+            // Verificar campos alternativos e mapear para nomes esperados
+            if (isset($data['senha']) && !isset($data['password'])) {
+                $data['password'] = $data['senha'];
+            }
+
+            $validated = Validator::make($data, [
                 'email' => 'required|string|email',
                 'password' => 'required|string',
             ])->validate();
 
-            if (!Auth::attempt($validated)) {
+            if (!Auth::attempt(['email' => $validated['email'], 'password' => $validated['password']])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Credenciais inválidas',
@@ -118,7 +174,9 @@ class AuthController extends Controller
      */
     public function logout()
     {
-        Auth::user()->tokens()->delete();
+        if (Auth::user()) {
+            Auth::user()->tokens()->delete();
+        }
 
         return response()->json([
             'success' => true,
